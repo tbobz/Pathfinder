@@ -1,0 +1,86 @@
+<html>
+<head>
+<title>KeyHandler.java</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cf8e6d;}
+.s1 { color: #bcbec4;}
+.s2 { color: #bcbec4;}
+.s3 { color: #7a7e85;}
+</style>
+</head>
+<body bgcolor="#191a1c">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+KeyHandler.java</font>
+</center></td></tr></table>
+<pre><span class="s0">package </span><span class="s1">game</span><span class="s2">;</span>
+
+<span class="s0">import </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">event</span><span class="s2">.</span><span class="s1">KeyAdapter</span><span class="s2">;</span>
+<span class="s0">import </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">event</span><span class="s2">.</span><span class="s1">KeyEvent</span><span class="s2">;</span>
+
+<span class="s0">public class </span><span class="s1">KeyHandler </span><span class="s0">extends </span><span class="s1">KeyAdapter </span><span class="s2">{  </span><span class="s3">//extends key adapter or implements key listener</span>
+
+    <span class="s0">public boolean </span><span class="s1">upPress</span><span class="s2">, </span><span class="s1">downPress</span><span class="s2">, </span><span class="s1">leftPress</span><span class="s2">, </span><span class="s1">rightPress</span><span class="s2">, </span><span class="s1">rotatePress</span><span class="s2">, </span><span class="s1">lockPress</span><span class="s2">, </span><span class="s1">helpPress</span><span class="s2">;</span>
+
+    <span class="s0">private </span><span class="s1">GamePanel g</span><span class="s2">;</span>
+
+    <span class="s0">public </span><span class="s1">KeyHandler</span><span class="s2">(</span><span class="s1">GamePanel g</span><span class="s2">) {</span>
+        <span class="s0">this</span><span class="s2">.</span><span class="s1">g </span><span class="s2">= </span><span class="s1">g</span><span class="s2">;</span>
+    <span class="s2">}</span>
+
+    <span class="s1">@Override</span>
+    <span class="s0">public void </span><span class="s1">keyPressed</span><span class="s2">(</span><span class="s1">KeyEvent e</span><span class="s2">) {</span>
+        <span class="s0">int </span><span class="s1">key </span><span class="s2">= </span><span class="s1">e</span><span class="s2">.</span><span class="s1">getKeyCode</span><span class="s2">();</span>
+
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">key </span><span class="s2">== </span><span class="s1">KeyEvent</span><span class="s2">.</span><span class="s1">VK_H</span><span class="s2">) {</span>
+            <span class="s0">if </span><span class="s2">(!</span><span class="s1">helpPress</span><span class="s2">) {</span>
+                <span class="s1">g</span><span class="s2">.</span><span class="s1">showHelp </span><span class="s2">= !</span><span class="s1">g</span><span class="s2">.</span><span class="s1">showHelp</span><span class="s2">;</span>
+                <span class="s1">g</span><span class="s2">.</span><span class="s1">repaint</span><span class="s2">();</span>
+            <span class="s2">}</span>
+            <span class="s1">helpPress </span><span class="s2">= </span><span class="s0">true</span><span class="s2">;</span>
+        <span class="s2">}</span>
+        <span class="s0">if </span><span class="s2">(!</span><span class="s1">g</span><span class="s2">.</span><span class="s1">showHelp</span><span class="s2">) {</span>
+            <span class="s0">if </span><span class="s2">((</span><span class="s1">key </span><span class="s2">== </span><span class="s1">KeyEvent</span><span class="s2">.</span><span class="s1">VK_LEFT</span><span class="s2">) || (</span><span class="s1">key </span><span class="s2">== </span><span class="s1">KeyEvent</span><span class="s2">.</span><span class="s1">VK_A</span><span class="s2">)) {</span>
+                <span class="s1">leftPress </span><span class="s2">= </span><span class="s0">true</span><span class="s2">;</span>
+            <span class="s2">}</span>
+            <span class="s0">if </span><span class="s2">((</span><span class="s1">key </span><span class="s2">== </span><span class="s1">KeyEvent</span><span class="s2">.</span><span class="s1">VK_RIGHT</span><span class="s2">) || (</span><span class="s1">key </span><span class="s2">== </span><span class="s1">KeyEvent</span><span class="s2">.</span><span class="s1">VK_D</span><span class="s2">)) {</span>
+                <span class="s1">rightPress </span><span class="s2">= </span><span class="s0">true</span><span class="s2">;</span>
+            <span class="s2">}</span>
+            <span class="s0">if </span><span class="s2">((</span><span class="s1">key </span><span class="s2">== </span><span class="s1">KeyEvent</span><span class="s2">.</span><span class="s1">VK_UP</span><span class="s2">) || (</span><span class="s1">key </span><span class="s2">== </span><span class="s1">KeyEvent</span><span class="s2">.</span><span class="s1">VK_W</span><span class="s2">)) {</span>
+                <span class="s1">upPress </span><span class="s2">= </span><span class="s0">true</span><span class="s2">;</span>
+            <span class="s2">}</span>
+            <span class="s0">if </span><span class="s2">((</span><span class="s1">key </span><span class="s2">== </span><span class="s1">KeyEvent</span><span class="s2">.</span><span class="s1">VK_DOWN</span><span class="s2">) || (</span><span class="s1">key </span><span class="s2">== </span><span class="s1">KeyEvent</span><span class="s2">.</span><span class="s1">VK_S</span><span class="s2">)) {</span>
+                <span class="s1">downPress </span><span class="s2">= </span><span class="s0">true</span><span class="s2">;</span>
+            <span class="s2">}</span>
+            <span class="s0">if </span><span class="s2">((</span><span class="s1">key </span><span class="s2">== </span><span class="s1">KeyEvent</span><span class="s2">.</span><span class="s1">VK_R</span><span class="s2">) || (</span><span class="s1">key </span><span class="s2">== </span><span class="s1">KeyEvent</span><span class="s2">.</span><span class="s1">VK_SPACE</span><span class="s2">)) {</span>
+                <span class="s1">rotatePress </span><span class="s2">= </span><span class="s0">true</span><span class="s2">;</span>
+            <span class="s2">}</span>
+            <span class="s0">if </span><span class="s2">(</span><span class="s1">key </span><span class="s2">== </span><span class="s1">KeyEvent</span><span class="s2">.</span><span class="s1">VK_ENTER</span><span class="s2">) {</span>
+                <span class="s1">lockPress </span><span class="s2">= </span><span class="s0">true</span><span class="s2">;</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+    <span class="s2">}</span>
+
+    <span class="s1">@Override</span>
+    <span class="s0">public void </span><span class="s1">keyReleased</span><span class="s2">(</span><span class="s1">KeyEvent e</span><span class="s2">) {</span>
+        <span class="s0">int </span><span class="s1">key </span><span class="s2">= </span><span class="s1">e</span><span class="s2">.</span><span class="s1">getKeyCode</span><span class="s2">();</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">key </span><span class="s2">== </span><span class="s1">KeyEvent</span><span class="s2">.</span><span class="s1">VK_H</span><span class="s2">) {</span>
+            <span class="s1">helpPress </span><span class="s2">= </span><span class="s0">false</span><span class="s2">;</span>
+        <span class="s2">}</span>
+    <span class="s2">}</span>
+
+    <span class="s0">public void </span><span class="s1">clearInputs</span><span class="s2">() {</span>
+        <span class="s1">lockPress </span><span class="s2">= </span><span class="s0">false</span><span class="s2">;</span>
+        <span class="s1">leftPress </span><span class="s2">= </span><span class="s0">false</span><span class="s2">;</span>
+        <span class="s1">rightPress </span><span class="s2">= </span><span class="s0">false</span><span class="s2">;</span>
+        <span class="s1">upPress </span><span class="s2">= </span><span class="s0">false</span><span class="s2">;</span>
+        <span class="s1">downPress </span><span class="s2">= </span><span class="s0">false</span><span class="s2">;</span>
+        <span class="s1">rotatePress </span><span class="s2">= </span><span class="s0">false</span><span class="s2">;</span>
+        <span class="s1">helpPress </span><span class="s2">= </span><span class="s0">false</span><span class="s2">;</span>
+    <span class="s2">}</span>
+<span class="s2">}</span>
+</pre>
+</body>
+</html>

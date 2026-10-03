@@ -1,0 +1,586 @@
+<html>
+<head>
+<title>GamePanel.java</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cf8e6d;}
+.s1 { color: #bcbec4;}
+.s2 { color: #bcbec4;}
+.s3 { color: #2aacb8;}
+.s4 { color: #7a7e85;}
+.s5 { color: #6aab73;}
+</style>
+</head>
+<body bgcolor="#191a1c">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+GamePanel.java</font>
+</center></td></tr></table>
+<pre><span class="s0">package </span><span class="s1">game</span><span class="s2">;</span>
+
+<span class="s0">import </span><span class="s1">javax</span><span class="s2">.</span><span class="s1">swing</span><span class="s2">.</span><span class="s1">JPanel</span><span class="s2">;</span>
+<span class="s0">import </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.*;</span>
+<span class="s0">import </span><span class="s1">java</span><span class="s2">.</span><span class="s1">util</span><span class="s2">.</span><span class="s1">ArrayList</span><span class="s2">;</span>
+<span class="s0">import </span><span class="s1">java</span><span class="s2">.</span><span class="s1">util</span><span class="s2">.</span><span class="s1">Collections</span><span class="s2">;</span>
+
+<span class="s0">public class </span><span class="s1">GamePanel </span><span class="s0">extends </span><span class="s1">JPanel </span><span class="s0">implements </span><span class="s1">Runnable</span><span class="s2">{</span>
+
+    <span class="s0">private </span><span class="s1">ArrayList</span><span class="s2">&lt;</span><span class="s1">Integer</span><span class="s2">&gt; </span><span class="s1">bag </span><span class="s2">= </span><span class="s0">new </span><span class="s1">ArrayList</span><span class="s2">&lt;&gt;();</span>
+    <span class="s0">private </span><span class="s1">ArrayList</span><span class="s2">&lt;</span><span class="s0">int</span><span class="s2">[]&gt; </span><span class="s1">victoryPath </span><span class="s2">= </span><span class="s0">new </span><span class="s1">ArrayList</span><span class="s2">&lt;&gt;();</span>
+    <span class="s0">private int </span><span class="s1">pathIndex </span><span class="s2">= </span><span class="s3">0</span><span class="s2">;</span>
+    <span class="s0">private volatile double </span><span class="s1">charX</span><span class="s2">, </span><span class="s1">charY</span><span class="s2">;</span>
+    <span class="s0">private final double </span><span class="s1">charSpeed </span><span class="s2">= </span><span class="s3">4.0</span><span class="s2">;</span>
+    <span class="s0">private boolean </span><span class="s1">animStart </span><span class="s2">= </span><span class="s0">false</span><span class="s2">;</span>
+    <span class="s0">public boolean </span><span class="s1">showHelp </span><span class="s2">= </span><span class="s0">false</span><span class="s2">;</span>
+
+    <span class="s0">public int</span><span class="s2">[][] </span><span class="s1">mapGrid </span><span class="s2">= </span><span class="s0">new int</span><span class="s2">[</span><span class="s3">20</span><span class="s2">][</span><span class="s3">20</span><span class="s2">];</span>
+
+    <span class="s0">public int </span><span class="s1">piecesRemaining</span><span class="s2">;</span>
+    <span class="s0">public boolean </span><span class="s1">isVictory</span><span class="s2">;</span>
+    <span class="s0">public boolean </span><span class="s1">isGameOver</span><span class="s2">;</span>
+    <span class="s0">public boolean </span><span class="s1">heightViolation</span><span class="s2">;</span>
+
+    <span class="s0">public int </span><span class="s1">startX</span><span class="s2">, </span><span class="s1">startY</span><span class="s2">;</span>
+    <span class="s0">public int </span><span class="s1">endX</span><span class="s2">, </span><span class="s1">endY</span><span class="s2">;</span>
+
+    <span class="s0">public final int </span><span class="s1">tileSize </span><span class="s2">= </span><span class="s3">32</span><span class="s2">;</span>
+
+
+    <span class="s1">Thread gameThread</span><span class="s2">;</span>
+    <span class="s0">int </span><span class="s1">FPS </span><span class="s2">= </span><span class="s3">60</span><span class="s2">;</span>
+    <span class="s1">KeyHandler k </span><span class="s2">= </span><span class="s0">new </span><span class="s1">KeyHandler</span><span class="s2">(</span><span class="s0">this</span><span class="s2">);</span>
+    <span class="s1">Blocks block</span><span class="s2">;</span>
+
+    <span class="s0">public </span><span class="s1">GamePanel</span><span class="s2">() {</span>
+        <span class="s0">this</span><span class="s2">.</span><span class="s1">setPreferredSize</span><span class="s2">(</span><span class="s0">new </span><span class="s1">Dimension</span><span class="s2">(</span><span class="s3">1024</span><span class="s2">, </span><span class="s3">768</span><span class="s2">));</span>
+        <span class="s0">this</span><span class="s2">.</span><span class="s1">setBackground</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">DARK_GRAY</span><span class="s2">);</span>
+
+        <span class="s0">this</span><span class="s2">.</span><span class="s1">setPreferredSize</span><span class="s2">(</span><span class="s0">new </span><span class="s1">Dimension</span><span class="s2">(</span><span class="s3">640</span><span class="s2">, </span><span class="s3">640</span><span class="s2">));</span>
+        <span class="s0">this</span><span class="s2">.</span><span class="s1">setBackground</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">BLACK</span><span class="s2">);</span>
+        <span class="s0">this</span><span class="s2">.</span><span class="s1">setDoubleBuffered</span><span class="s2">(</span><span class="s0">true</span><span class="s2">);</span>
+        <span class="s0">this</span><span class="s2">.</span><span class="s1">setLayout</span><span class="s2">(</span><span class="s0">new </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">BorderLayout</span><span class="s2">());</span>
+
+
+        <span class="s0">this</span><span class="s2">.</span><span class="s1">setFocusable</span><span class="s2">(</span><span class="s0">true</span><span class="s2">);</span>
+        <span class="s0">this</span><span class="s2">.</span><span class="s1">requestFocusInWindow</span><span class="s2">();</span>
+
+        <span class="s0">this</span><span class="s2">.</span><span class="s1">addKeyListener</span><span class="s2">(</span><span class="s1">k</span><span class="s2">);</span>
+
+        <span class="s1">resetConfig</span><span class="s2">();</span>
+
+    <span class="s2">}</span>
+
+    <span class="s0">public void </span><span class="s1">resetConfig</span><span class="s2">() {</span>
+        <span class="s1">mapGrid </span><span class="s2">= </span><span class="s0">new int</span><span class="s2">[</span><span class="s3">20</span><span class="s2">][</span><span class="s3">20</span><span class="s2">];</span>
+
+        <span class="s1">startX </span><span class="s2">= (</span><span class="s0">int</span><span class="s2">) (</span><span class="s1">Math</span><span class="s2">.</span><span class="s1">random</span><span class="s2">() * </span><span class="s3">3</span><span class="s2">);</span>
+        <span class="s1">startY </span><span class="s2">= (</span><span class="s0">int</span><span class="s2">) (</span><span class="s1">Math</span><span class="s2">.</span><span class="s1">random</span><span class="s2">() * </span><span class="s3">19</span><span class="s2">);</span>
+
+        <span class="s1">endX </span><span class="s2">= </span><span class="s3">17 </span><span class="s2">+ (</span><span class="s0">int</span><span class="s2">) (</span><span class="s1">Math</span><span class="s2">.</span><span class="s1">random</span><span class="s2">() * </span><span class="s3">3</span><span class="s2">);</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">startY </span><span class="s2">&lt;= </span><span class="s3">10</span><span class="s2">)</span>
+            <span class="s1">endY </span><span class="s2">= (</span><span class="s0">int</span><span class="s2">) (</span><span class="s1">Math</span><span class="s2">.</span><span class="s1">random</span><span class="s2">() * </span><span class="s3">9</span><span class="s2">) + </span><span class="s3">10</span><span class="s2">;</span>
+        <span class="s0">else if </span><span class="s2">(</span><span class="s1">startY </span><span class="s2">&gt; </span><span class="s3">10</span><span class="s2">)</span>
+            <span class="s1">endY </span><span class="s2">= (</span><span class="s0">int</span><span class="s2">) (</span><span class="s1">Math</span><span class="s2">.</span><span class="s1">random</span><span class="s2">() * </span><span class="s3">10</span><span class="s2">) + </span><span class="s3">1</span><span class="s2">;</span>
+
+        <span class="s4">// 2 = starting point</span>
+        <span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">startX</span><span class="s2">][</span><span class="s1">startY</span><span class="s2">] = </span><span class="s3">2</span><span class="s2">;</span>
+        <span class="s4">// 3 = ending point</span>
+        <span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">endX</span><span class="s2">][</span><span class="s1">endY</span><span class="s2">] = </span><span class="s3">3</span><span class="s2">;</span>
+        <span class="s4">// 6 = character</span>
+        <span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">startX</span><span class="s2">][</span><span class="s1">startY</span><span class="s2">-</span><span class="s3">1</span><span class="s2">] = </span><span class="s3">6</span><span class="s2">;</span>
+
+        <span class="s1">piecesRemaining </span><span class="s2">= </span><span class="s3">8</span><span class="s2">;</span>
+        <span class="s1">isVictory </span><span class="s2">= </span><span class="s0">false</span><span class="s2">;</span>
+        <span class="s1">isGameOver </span><span class="s2">= </span><span class="s0">false</span><span class="s2">;</span>
+        <span class="s1">heightViolation </span><span class="s2">= </span><span class="s0">false</span><span class="s2">;</span>
+
+        <span class="s1">replenish</span><span class="s2">();</span>
+        <span class="s1">block </span><span class="s2">= </span><span class="s0">new </span><span class="s1">Blocks</span><span class="s2">(</span><span class="s1">nextBlock</span><span class="s2">());</span>
+    <span class="s2">}</span>
+
+
+    <span class="s0">public void </span><span class="s1">startGameThread</span><span class="s2">() {</span>
+        <span class="s1">gameThread </span><span class="s2">= </span><span class="s0">new </span><span class="s1">Thread</span><span class="s2">(</span><span class="s0">this</span><span class="s2">);</span>
+        <span class="s1">gameThread</span><span class="s2">.</span><span class="s1">start</span><span class="s2">();</span>
+    <span class="s2">}</span>
+
+    <span class="s0">private void </span><span class="s1">replenish</span><span class="s2">() {</span>
+        <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">i </span><span class="s2">= </span><span class="s3">1</span><span class="s2">; </span><span class="s1">i </span><span class="s2">&lt;= </span><span class="s3">10</span><span class="s2">; </span><span class="s1">i</span><span class="s2">++) {</span>
+            <span class="s1">bag</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">i</span><span class="s2">);</span>
+        <span class="s2">}</span>
+        <span class="s1">Collections</span><span class="s2">.</span><span class="s1">shuffle</span><span class="s2">(</span><span class="s1">bag</span><span class="s2">);</span>
+    <span class="s2">}</span>
+
+    <span class="s0">public int </span><span class="s1">nextBlock</span><span class="s2">() {</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">bag</span><span class="s2">.</span><span class="s1">isEmpty</span><span class="s2">()) {</span>
+            <span class="s1">replenish</span><span class="s2">();</span>
+        <span class="s2">}</span>
+        <span class="s0">return </span><span class="s1">bag</span><span class="s2">.</span><span class="s1">remove</span><span class="s2">(</span><span class="s3">0</span><span class="s2">);</span>
+    <span class="s2">}</span>
+
+    <span class="s1">@Override</span>
+    <span class="s0">public void </span><span class="s1">run</span><span class="s2">() {</span>
+        <span class="s0">double </span><span class="s1">drawInterval </span><span class="s2">= (</span><span class="s0">double</span><span class="s2">) </span><span class="s3">1000000000 </span><span class="s2">/ </span><span class="s1">FPS</span><span class="s2">;</span>
+        <span class="s0">double </span><span class="s1">nextDraw </span><span class="s2">= </span><span class="s1">System</span><span class="s2">.</span><span class="s1">nanoTime</span><span class="s2">() + </span><span class="s1">drawInterval</span><span class="s2">;</span>
+
+        <span class="s0">while </span><span class="s2">(</span><span class="s1">gameThread </span><span class="s2">!= </span><span class="s0">null</span><span class="s2">) {</span>
+            <span class="s1">update</span><span class="s2">();</span>
+            <span class="s1">repaint</span><span class="s2">();</span>
+
+            <span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Toolkit</span><span class="s2">.</span><span class="s1">getDefaultToolkit</span><span class="s2">().</span><span class="s1">sync</span><span class="s2">();</span>
+
+            <span class="s0">try </span><span class="s2">{</span>
+                <span class="s0">double </span><span class="s1">remainingTime </span><span class="s2">= </span><span class="s1">nextDraw </span><span class="s2">- </span><span class="s1">System</span><span class="s2">.</span><span class="s1">nanoTime</span><span class="s2">();</span>
+                <span class="s1">remainingTime </span><span class="s2">= </span><span class="s1">remainingTime </span><span class="s2">/ </span><span class="s3">1000000</span><span class="s2">;</span>
+                <span class="s0">if </span><span class="s2">(</span><span class="s1">remainingTime </span><span class="s2">&lt; </span><span class="s3">0</span><span class="s2">)</span>
+                    <span class="s1">remainingTime </span><span class="s2">= </span><span class="s3">0</span><span class="s2">;</span>
+                <span class="s1">Thread</span><span class="s2">.</span><span class="s1">sleep</span><span class="s2">((</span><span class="s0">long</span><span class="s2">) </span><span class="s1">remainingTime</span><span class="s2">);</span>
+                <span class="s1">nextDraw </span><span class="s2">+= </span><span class="s1">drawInterval</span><span class="s2">;</span>
+            <span class="s2">}</span>
+            <span class="s0">catch </span><span class="s2">(</span><span class="s1">InterruptedException e</span><span class="s2">) {</span>
+                <span class="s1">e</span><span class="s2">.</span><span class="s1">printStackTrace</span><span class="s2">();</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+    <span class="s2">}</span>
+
+    <span class="s0">private boolean </span><span class="s1">findHeightViolation</span><span class="s2">() {</span>
+        <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">col </span><span class="s2">= </span><span class="s3">0</span><span class="s2">; </span><span class="s1">col </span><span class="s2">&lt; </span><span class="s3">20</span><span class="s2">; </span><span class="s1">col</span><span class="s2">++) {</span>
+            <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">row </span><span class="s2">= </span><span class="s3">0</span><span class="s2">; </span><span class="s1">row </span><span class="s2">&lt; </span><span class="s3">20</span><span class="s2">; </span><span class="s1">row</span><span class="s2">++) {</span>
+                <span class="s0">if </span><span class="s2">(</span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">col</span><span class="s2">][</span><span class="s1">row</span><span class="s2">] == </span><span class="s3">5</span><span class="s2">)</span>
+                    <span class="s0">return true</span><span class="s2">;</span>
+            <span class="s2">}</span>
+
+            <span class="s0">int </span><span class="s1">numVert </span><span class="s2">= </span><span class="s3">0</span><span class="s2">;</span>
+            <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">row </span><span class="s2">= </span><span class="s3">0</span><span class="s2">; </span><span class="s1">row </span><span class="s2">&lt; </span><span class="s3">20</span><span class="s2">; </span><span class="s1">row</span><span class="s2">++) {</span>
+                <span class="s0">if </span><span class="s2">(</span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">col</span><span class="s2">][</span><span class="s1">row</span><span class="s2">] == </span><span class="s3">1 </span><span class="s2">|| </span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">col</span><span class="s2">][</span><span class="s1">row</span><span class="s2">] == </span><span class="s3">2 </span><span class="s2">|| </span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">col</span><span class="s2">][</span><span class="s1">row</span><span class="s2">] == </span><span class="s3">3 </span><span class="s2">|| </span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">col</span><span class="s2">][</span><span class="s1">row</span><span class="s2">] == </span><span class="s3">4</span><span class="s2">) {</span>
+                    <span class="s1">numVert</span><span class="s2">++;</span>
+                    <span class="s0">if </span><span class="s2">(</span><span class="s1">numVert </span><span class="s2">&gt;= </span><span class="s3">3</span><span class="s2">) {</span>
+                        <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">r </span><span class="s2">= </span><span class="s3">0</span><span class="s2">; </span><span class="s1">r </span><span class="s2">&lt; </span><span class="s3">20</span><span class="s2">; </span><span class="s1">r</span><span class="s2">++) {</span>
+                            <span class="s0">if </span><span class="s2">(</span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">col</span><span class="s2">][</span><span class="s1">r</span><span class="s2">] == </span><span class="s3">4</span><span class="s2">)</span>
+                                <span class="s0">return true</span><span class="s2">;</span>
+                        <span class="s2">}</span>
+                    <span class="s2">}</span>
+                <span class="s2">}</span>
+                <span class="s0">else</span>
+                    <span class="s1">numVert </span><span class="s2">= </span><span class="s3">0</span><span class="s2">;</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+        <span class="s0">return false</span><span class="s2">;</span>
+    <span class="s2">}</span>
+
+    <span class="s0">public boolean </span><span class="s1">inBounds</span><span class="s2">(</span><span class="s0">int</span><span class="s2">[][] </span><span class="s1">b</span><span class="s2">, </span><span class="s0">int </span><span class="s1">targX</span><span class="s2">, </span><span class="s0">int </span><span class="s1">targY</span><span class="s2">) {</span>
+        <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">r </span><span class="s2">= </span><span class="s3">0</span><span class="s2">; </span><span class="s1">r </span><span class="s2">&lt; </span><span class="s1">b</span><span class="s2">.</span><span class="s1">length</span><span class="s2">; </span><span class="s1">r</span><span class="s2">++) {</span>
+            <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">c </span><span class="s2">= </span><span class="s3">0</span><span class="s2">; </span><span class="s1">c </span><span class="s2">&lt; </span><span class="s1">b</span><span class="s2">[</span><span class="s3">0</span><span class="s2">].</span><span class="s1">length</span><span class="s2">; </span><span class="s1">c</span><span class="s2">++) {</span>
+                <span class="s0">if </span><span class="s2">(</span><span class="s1">b</span><span class="s2">[</span><span class="s1">r</span><span class="s2">][</span><span class="s1">c</span><span class="s2">] == </span><span class="s3">1</span><span class="s2">) {</span>
+                    <span class="s0">int </span><span class="s1">mapX </span><span class="s2">= </span><span class="s1">targX </span><span class="s2">+ </span><span class="s1">c</span><span class="s2">;</span>
+                    <span class="s0">int </span><span class="s1">mapY </span><span class="s2">= </span><span class="s1">targY </span><span class="s2">+ </span><span class="s1">r</span><span class="s2">;</span>
+
+                    <span class="s0">if </span><span class="s2">(</span><span class="s1">mapX </span><span class="s2">&lt; </span><span class="s3">0 </span><span class="s2">|| </span><span class="s1">mapX </span><span class="s2">&gt;= </span><span class="s3">20 </span><span class="s2">|| </span><span class="s1">mapY </span><span class="s2">&lt; </span><span class="s3">0 </span><span class="s2">|| </span><span class="s1">mapY </span><span class="s2">&gt;= </span><span class="s3">20</span><span class="s2">)</span>
+                        <span class="s0">return false</span><span class="s2">;</span>
+                <span class="s2">}</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+        <span class="s0">return true</span><span class="s2">;</span>
+    <span class="s2">}</span>
+
+    <span class="s0">public void </span><span class="s1">update</span><span class="s2">() {</span>
+
+        <span class="s0">boolean </span><span class="s1">victoryFinished </span><span class="s2">= </span><span class="s1">isVictory </span><span class="s2">&amp;&amp; !</span><span class="s1">animStart</span><span class="s2">;</span>
+
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">isGameOver </span><span class="s2">|| </span><span class="s1">victoryFinished</span><span class="s2">) {</span>
+            <span class="s0">if </span><span class="s2">(</span><span class="s1">k</span><span class="s2">.</span><span class="s1">lockPress</span><span class="s2">) { </span><span class="s4">// hitting ENTER allows the player to play another round</span>
+                <span class="s1">resetConfig</span><span class="s2">();</span>
+                <span class="s1">k</span><span class="s2">.</span><span class="s1">clearInputs</span><span class="s2">();</span>
+            <span class="s2">}</span>
+            <span class="s0">return</span><span class="s2">;</span>
+        <span class="s2">}</span>
+
+        <span class="s4">// calculates the path for the character to take</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">isVictory </span><span class="s2">&amp;&amp; </span><span class="s1">animStart</span><span class="s2">) {</span>
+            <span class="s0">if </span><span class="s2">(!</span><span class="s1">victoryPath</span><span class="s2">.</span><span class="s1">isEmpty</span><span class="s2">()) {</span>
+                <span class="s0">int</span><span class="s2">[] </span><span class="s1">targSpot </span><span class="s2">= </span><span class="s1">victoryPath</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">pathIndex</span><span class="s2">);</span>
+                <span class="s0">double </span><span class="s1">targX </span><span class="s2">= </span><span class="s1">targSpot</span><span class="s2">[</span><span class="s3">0</span><span class="s2">] * </span><span class="s3">32</span><span class="s2">;</span>
+                <span class="s0">double </span><span class="s1">targY </span><span class="s2">= </span><span class="s1">targSpot</span><span class="s2">[</span><span class="s3">1</span><span class="s2">] * </span><span class="s3">32</span><span class="s2">;</span>
+
+                <span class="s0">boolean </span><span class="s1">goingUp </span><span class="s2">= </span><span class="s1">targY </span><span class="s2">&lt; </span><span class="s1">charY</span><span class="s2">;</span>
+                <span class="s4">// character moving animation</span>
+                <span class="s0">if </span><span class="s2">(</span><span class="s1">goingUp</span><span class="s2">) {</span>
+                    <span class="s0">if </span><span class="s2">(</span><span class="s1">charY </span><span class="s2">&gt; </span><span class="s1">targY</span><span class="s2">) {</span>
+                        <span class="s1">charY </span><span class="s2">= </span><span class="s1">Math</span><span class="s2">.</span><span class="s1">max</span><span class="s2">(</span><span class="s1">charY </span><span class="s2">- </span><span class="s1">charSpeed</span><span class="s2">, </span><span class="s1">targY</span><span class="s2">);</span>
+                    <span class="s2">}</span>
+                    <span class="s0">else </span><span class="s2">{</span>
+                        <span class="s0">if </span><span class="s2">(</span><span class="s1">charX </span><span class="s2">&lt; </span><span class="s1">targX</span><span class="s2">) {</span>
+                            <span class="s1">charX </span><span class="s2">= </span><span class="s1">Math</span><span class="s2">.</span><span class="s1">min</span><span class="s2">(</span><span class="s1">charX </span><span class="s2">+ </span><span class="s1">charSpeed</span><span class="s2">, </span><span class="s1">targX</span><span class="s2">);</span>
+                        <span class="s2">} </span><span class="s0">else if </span><span class="s2">(</span><span class="s1">charX </span><span class="s2">&gt; </span><span class="s1">targX</span><span class="s2">) {</span>
+                            <span class="s1">charX </span><span class="s2">= </span><span class="s1">Math</span><span class="s2">.</span><span class="s1">max</span><span class="s2">(</span><span class="s1">charX </span><span class="s2">- </span><span class="s1">charSpeed</span><span class="s2">, </span><span class="s1">targX</span><span class="s2">);</span>
+                        <span class="s2">}</span>
+                    <span class="s2">}</span>
+                <span class="s2">}</span>
+                <span class="s0">else </span><span class="s2">{</span>
+
+                    <span class="s0">if </span><span class="s2">(</span><span class="s1">charX </span><span class="s2">&lt; </span><span class="s1">targX</span><span class="s2">) {</span>
+                        <span class="s1">charX </span><span class="s2">= </span><span class="s1">Math</span><span class="s2">.</span><span class="s1">min</span><span class="s2">(</span><span class="s1">charX </span><span class="s2">+ </span><span class="s1">charSpeed</span><span class="s2">, </span><span class="s1">targX</span><span class="s2">);</span>
+                    <span class="s2">}</span>
+                    <span class="s0">else if </span><span class="s2">(</span><span class="s1">charX </span><span class="s2">&gt; </span><span class="s1">targX</span><span class="s2">) {</span>
+                        <span class="s1">charX </span><span class="s2">= </span><span class="s1">Math</span><span class="s2">.</span><span class="s1">max</span><span class="s2">(</span><span class="s1">charX </span><span class="s2">- </span><span class="s1">charSpeed</span><span class="s2">, </span><span class="s1">targX</span><span class="s2">);</span>
+                    <span class="s2">}</span>
+                    <span class="s0">else </span><span class="s2">{</span>
+                        <span class="s0">if </span><span class="s2">(</span><span class="s1">charY </span><span class="s2">&lt; </span><span class="s1">targY</span><span class="s2">) {</span>
+                            <span class="s1">charY </span><span class="s2">= </span><span class="s1">Math</span><span class="s2">.</span><span class="s1">min</span><span class="s2">(</span><span class="s1">charY </span><span class="s2">+ </span><span class="s1">charSpeed</span><span class="s2">, </span><span class="s1">targY</span><span class="s2">);</span>
+                        <span class="s2">}</span>
+                    <span class="s2">}</span>
+                <span class="s2">}</span>
+
+                <span class="s0">if </span><span class="s2">(</span><span class="s1">charX </span><span class="s2">== </span><span class="s1">targX </span><span class="s2">&amp;&amp; </span><span class="s1">charY </span><span class="s2">== </span><span class="s1">targY</span><span class="s2">) {</span>
+                    <span class="s0">if </span><span class="s2">(</span><span class="s1">pathIndex </span><span class="s2">&lt; </span><span class="s1">victoryPath</span><span class="s2">.</span><span class="s1">size</span><span class="s2">() - </span><span class="s3">1</span><span class="s2">)</span>
+                        <span class="s1">pathIndex</span><span class="s2">++;</span>
+                    <span class="s0">else </span><span class="s2">{</span>
+                        <span class="s1">animStart </span><span class="s2">= </span><span class="s0">false</span><span class="s2">; </span><span class="s4">// ends animation</span>
+                    <span class="s2">}</span>
+                <span class="s2">}</span>
+            <span class="s2">}</span>
+            <span class="s0">return</span><span class="s2">;</span>
+        <span class="s2">}</span>
+
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">isGameOver</span><span class="s2">) {</span>
+            <span class="s0">return</span><span class="s2">;</span>
+        <span class="s2">}</span>
+
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">block </span><span class="s2">== </span><span class="s0">null</span><span class="s2">)</span>
+            <span class="s0">return</span><span class="s2">;</span>
+
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">k</span><span class="s2">.</span><span class="s1">upPress </span><span class="s2">&amp;&amp; </span><span class="s1">inBounds</span><span class="s2">(</span><span class="s1">block</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">, </span><span class="s1">block</span><span class="s2">.</span><span class="s1">xGrid</span><span class="s2">, </span><span class="s1">block</span><span class="s2">.</span><span class="s1">yGrid </span><span class="s2">- </span><span class="s3">1</span><span class="s2">))</span>
+            <span class="s1">block</span><span class="s2">.</span><span class="s1">yGrid</span><span class="s2">--;</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">k</span><span class="s2">.</span><span class="s1">downPress </span><span class="s2">&amp;&amp; </span><span class="s1">inBounds</span><span class="s2">(</span><span class="s1">block</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">, </span><span class="s1">block</span><span class="s2">.</span><span class="s1">xGrid</span><span class="s2">, </span><span class="s1">block</span><span class="s2">.</span><span class="s1">yGrid </span><span class="s2">+ </span><span class="s3">1</span><span class="s2">))</span>
+            <span class="s1">block</span><span class="s2">.</span><span class="s1">yGrid</span><span class="s2">++;</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">k</span><span class="s2">.</span><span class="s1">leftPress </span><span class="s2">&amp;&amp; </span><span class="s1">inBounds</span><span class="s2">(</span><span class="s1">block</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">, </span><span class="s1">block</span><span class="s2">.</span><span class="s1">xGrid </span><span class="s2">- </span><span class="s3">1</span><span class="s2">, </span><span class="s1">block</span><span class="s2">.</span><span class="s1">yGrid</span><span class="s2">))</span>
+            <span class="s1">block</span><span class="s2">.</span><span class="s1">xGrid</span><span class="s2">--;</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">k</span><span class="s2">.</span><span class="s1">rightPress </span><span class="s2">&amp;&amp; </span><span class="s1">inBounds</span><span class="s2">(</span><span class="s1">block</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">, </span><span class="s1">block</span><span class="s2">.</span><span class="s1">xGrid </span><span class="s2">+ </span><span class="s3">1</span><span class="s2">, </span><span class="s1">block</span><span class="s2">.</span><span class="s1">yGrid</span><span class="s2">))</span>
+            <span class="s1">block</span><span class="s2">.</span><span class="s1">xGrid</span><span class="s2">++;</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">k</span><span class="s2">.</span><span class="s1">rotatePress</span><span class="s2">)</span>
+            <span class="s1">block</span><span class="s2">.</span><span class="s1">rotate</span><span class="s2">();</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">k</span><span class="s2">.</span><span class="s1">helpPress</span><span class="s2">)</span>
+            <span class="s1">showHelp </span><span class="s2">= !</span><span class="s1">showHelp</span><span class="s2">;</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">k</span><span class="s2">.</span><span class="s1">lockPress</span><span class="s2">) {</span>
+            <span class="s0">if </span><span class="s2">(</span><span class="s1">isAreaClear</span><span class="s2">()) {</span>
+                <span class="s1">lockIn</span><span class="s2">();</span>
+                <span class="s1">piecesRemaining</span><span class="s2">--;</span>
+
+                <span class="s0">if </span><span class="s2">(</span><span class="s1">pathExists</span><span class="s2">() &amp;&amp; !</span><span class="s1">findHeightViolation</span><span class="s2">()) {</span>
+                    <span class="s1">isVictory </span><span class="s2">= </span><span class="s0">true</span><span class="s2">;</span>
+                    <span class="s1">block </span><span class="s2">= </span><span class="s0">null</span><span class="s2">;</span>
+
+                    <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">col </span><span class="s2">= </span><span class="s3">0</span><span class="s2">; </span><span class="s1">col </span><span class="s2">&lt; </span><span class="s3">20</span><span class="s2">; </span><span class="s1">col</span><span class="s2">++) {</span>
+                        <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">row </span><span class="s2">= </span><span class="s3">0</span><span class="s2">; </span><span class="s1">row </span><span class="s2">&lt; </span><span class="s3">20</span><span class="s2">; </span><span class="s1">row</span><span class="s2">++) {</span>
+                            <span class="s0">if </span><span class="s2">(</span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">col</span><span class="s2">][</span><span class="s1">row</span><span class="s2">] == </span><span class="s3">6</span><span class="s2">) {</span>
+                                <span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">col</span><span class="s2">][</span><span class="s1">row</span><span class="s2">] = </span><span class="s3">0</span><span class="s2">;</span>
+                            <span class="s2">}</span>
+                        <span class="s2">}</span>
+                    <span class="s2">}</span>
+
+                    <span class="s1">charX </span><span class="s2">= </span><span class="s1">startX </span><span class="s2">* </span><span class="s3">32</span><span class="s2">;</span>
+                    <span class="s1">charY </span><span class="s2">= (</span><span class="s1">startY</span><span class="s2">-</span><span class="s3">1</span><span class="s2">) * </span><span class="s3">32</span><span class="s2">;</span>
+                    <span class="s1">pathIndex </span><span class="s2">= </span><span class="s3">0</span><span class="s2">;</span>
+                    <span class="s1">animStart </span><span class="s2">= </span><span class="s0">true</span><span class="s2">;</span>
+
+                <span class="s2">}</span>
+                <span class="s0">else if </span><span class="s2">(</span><span class="s1">piecesRemaining </span><span class="s2">&lt;= </span><span class="s3">0 </span><span class="s2">|| </span><span class="s1">findHeightViolation</span><span class="s2">()) {</span>
+                    <span class="s1">isGameOver </span><span class="s2">= </span><span class="s0">true</span><span class="s2">;</span>
+                    <span class="s1">block </span><span class="s2">= </span><span class="s0">null</span><span class="s2">;</span>
+                <span class="s2">}</span>
+                <span class="s0">else </span><span class="s2">{</span>
+                    <span class="s1">block </span><span class="s2">= </span><span class="s0">new </span><span class="s1">Blocks</span><span class="s2">(</span><span class="s1">nextBlock</span><span class="s2">());</span>
+                <span class="s2">}</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">block </span><span class="s2">!= </span><span class="s0">null</span><span class="s2">)</span>
+            <span class="s1">block</span><span class="s2">.</span><span class="s1">animate</span><span class="s2">(</span><span class="s3">32</span><span class="s2">);</span>
+        <span class="s1">k</span><span class="s2">.</span><span class="s1">clearInputs</span><span class="s2">();</span>
+
+    <span class="s2">}</span>
+
+    <span class="s4">// checks whether a valid path exists</span>
+    <span class="s0">public boolean </span><span class="s1">pathExists</span><span class="s2">() {</span>
+        <span class="s1">victoryPath</span><span class="s2">.</span><span class="s1">clear</span><span class="s2">();</span>
+
+        <span class="s0">int </span><span class="s1">currX </span><span class="s2">= </span><span class="s1">startX</span><span class="s2">;</span>
+        <span class="s0">int </span><span class="s1">currY </span><span class="s2">= </span><span class="s1">startY </span><span class="s2">- </span><span class="s3">1</span><span class="s2">;</span>
+
+        <span class="s1">victoryPath</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s0">new int</span><span class="s2">[]{</span><span class="s1">currX</span><span class="s2">, </span><span class="s1">currY</span><span class="s2">});</span>
+
+        <span class="s0">while </span><span class="s2">(</span><span class="s1">currX </span><span class="s2">&lt; </span><span class="s1">endX</span><span class="s2">) {</span>
+            <span class="s0">int </span><span class="s1">nextX </span><span class="s2">= </span><span class="s1">currX </span><span class="s2">+ </span><span class="s3">1</span><span class="s2">;</span>
+            <span class="s0">int </span><span class="s1">nextY </span><span class="s2">= -</span><span class="s3">1</span><span class="s2">;</span>
+
+            <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">r </span><span class="s2">= </span><span class="s3">0</span><span class="s2">; </span><span class="s1">r </span><span class="s2">&lt; </span><span class="s3">20</span><span class="s2">; </span><span class="s1">r</span><span class="s2">++) {</span>
+                <span class="s0">if </span><span class="s2">(</span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">nextX</span><span class="s2">][</span><span class="s1">r</span><span class="s2">] == </span><span class="s3">1 </span><span class="s2">|| </span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">nextX</span><span class="s2">][</span><span class="s1">r</span><span class="s2">] == </span><span class="s3">2 </span><span class="s2">|| </span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">nextX</span><span class="s2">][</span><span class="s1">r</span><span class="s2">] == </span><span class="s3">3</span><span class="s2">) {</span>
+                    <span class="s1">nextY </span><span class="s2">= </span><span class="s1">r </span><span class="s2">- </span><span class="s3">1</span><span class="s2">;</span>
+                    <span class="s0">break</span><span class="s2">;</span>
+                <span class="s2">}</span>
+            <span class="s2">}</span>
+
+            <span class="s0">if </span><span class="s2">(</span><span class="s1">nextY </span><span class="s2">== -</span><span class="s3">1 </span><span class="s2">|| (</span><span class="s1">currY </span><span class="s2">- </span><span class="s1">nextY</span><span class="s2">) &gt; </span><span class="s3">2 </span><span class="s2">|| (</span><span class="s1">nextY </span><span class="s2">- </span><span class="s1">currY</span><span class="s2">) &gt; </span><span class="s3">2</span><span class="s2">){</span>
+                <span class="s1">victoryPath</span><span class="s2">.</span><span class="s1">clear</span><span class="s2">();</span>
+                <span class="s0">return false</span><span class="s2">;</span>
+            <span class="s2">}</span>
+
+            <span class="s4">// move tracking position</span>
+            <span class="s1">currY </span><span class="s2">= </span><span class="s1">nextY</span><span class="s2">;</span>
+            <span class="s1">currX </span><span class="s2">= </span><span class="s1">nextX</span><span class="s2">;</span>
+            <span class="s1">victoryPath</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s0">new int</span><span class="s2">[]{</span><span class="s1">currX</span><span class="s2">, </span><span class="s1">currY</span><span class="s2">});</span>
+        <span class="s2">}</span>
+        <span class="s4">// victory condition (on top of goal block)</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">currY </span><span class="s2">== </span><span class="s1">endY </span><span class="s2">- </span><span class="s3">1</span><span class="s2">)</span>
+            <span class="s0">return true</span><span class="s2">;</span>
+        <span class="s0">else </span><span class="s2">{</span>
+            <span class="s1">victoryPath</span><span class="s2">.</span><span class="s1">clear</span><span class="s2">();</span>
+            <span class="s0">return false</span><span class="s2">;</span>
+        <span class="s2">}</span>
+    <span class="s2">}</span>
+
+    <span class="s0">private void </span><span class="s1">lockIn</span><span class="s2">() {</span>
+        <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">r </span><span class="s2">= </span><span class="s3">0</span><span class="s2">; </span><span class="s1">r </span><span class="s2">&lt; </span><span class="s1">block</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">.</span><span class="s1">length</span><span class="s2">; </span><span class="s1">r</span><span class="s2">++) {</span>
+            <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">c </span><span class="s2">= </span><span class="s3">0</span><span class="s2">; </span><span class="s1">c </span><span class="s2">&lt; </span><span class="s1">block</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span class="s3">0</span><span class="s2">].</span><span class="s1">length</span><span class="s2">; </span><span class="s1">c</span><span class="s2">++) {</span>
+                <span class="s0">if </span><span class="s2">(</span><span class="s1">block</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span class="s1">r</span><span class="s2">][</span><span class="s1">c</span><span class="s2">] == </span><span class="s3">1</span><span class="s2">) {</span>
+                    <span class="s0">int </span><span class="s1">xTarget </span><span class="s2">= </span><span class="s1">block</span><span class="s2">.</span><span class="s1">xGrid </span><span class="s2">+ </span><span class="s1">c</span><span class="s2">;</span>
+                    <span class="s0">int </span><span class="s1">yTarget </span><span class="s2">= </span><span class="s1">block</span><span class="s2">.</span><span class="s1">yGrid </span><span class="s2">+ </span><span class="s1">r</span><span class="s2">;</span>
+
+                    <span class="s4">// checks that target position is within bounds and not occupied by another block</span>
+                    <span class="s0">if </span><span class="s2">(</span><span class="s1">xTarget </span><span class="s2">&gt;= </span><span class="s3">0 </span><span class="s2">&amp;&amp; </span><span class="s1">xTarget </span><span class="s2">&lt; </span><span class="s3">20 </span><span class="s2">&amp;&amp; </span><span class="s1">yTarget </span><span class="s2">&gt;= </span><span class="s3">0 </span><span class="s2">&amp;&amp; </span><span class="s1">yTarget </span><span class="s2">&lt; </span><span class="s3">20</span><span class="s2">) {</span>
+                        <span class="s0">if </span><span class="s2">(</span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">xTarget</span><span class="s2">][</span><span class="s1">yTarget</span><span class="s2">] == </span><span class="s3">0</span><span class="s2">) {</span>
+                            <span class="s4">// places block, assigns the target space to 1 (occupied status)</span>
+                            <span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">xTarget</span><span class="s2">][</span><span class="s1">yTarget</span><span class="s2">] = </span><span class="s3">1</span><span class="s2">;</span>
+                        <span class="s2">}</span>
+                    <span class="s2">}</span>
+                <span class="s2">}</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+    <span class="s2">}</span>
+
+    <span class="s0">private boolean </span><span class="s1">isAreaClear</span><span class="s2">() {</span>
+        <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">r </span><span class="s2">= </span><span class="s3">0</span><span class="s2">; </span><span class="s1">r </span><span class="s2">&lt; </span><span class="s1">block</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">.</span><span class="s1">length</span><span class="s2">; </span><span class="s1">r</span><span class="s2">++) {</span>
+            <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">c </span><span class="s2">= </span><span class="s3">0</span><span class="s2">; </span><span class="s1">c </span><span class="s2">&lt; </span><span class="s1">block</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span class="s1">r</span><span class="s2">].</span><span class="s1">length</span><span class="s2">; </span><span class="s1">c</span><span class="s2">++) {</span>
+                <span class="s0">if </span><span class="s2">(</span><span class="s1">block</span><span class="s2">.</span><span class="s1">shape</span><span class="s2">[</span><span class="s1">r</span><span class="s2">][</span><span class="s1">c</span><span class="s2">] == </span><span class="s3">1</span><span class="s2">) {</span>
+                    <span class="s0">int </span><span class="s1">xTarget </span><span class="s2">= </span><span class="s1">block</span><span class="s2">.</span><span class="s1">xGrid </span><span class="s2">+ </span><span class="s1">c</span><span class="s2">;</span>
+                    <span class="s0">int </span><span class="s1">yTarget </span><span class="s2">= </span><span class="s1">block</span><span class="s2">.</span><span class="s1">yGrid </span><span class="s2">+ </span><span class="s1">r</span><span class="s2">;</span>
+
+                    <span class="s0">if </span><span class="s2">(</span><span class="s1">xTarget </span><span class="s2">&lt; </span><span class="s3">0 </span><span class="s2">|| </span><span class="s1">xTarget </span><span class="s2">&gt;= </span><span class="s3">20 </span><span class="s2">|| </span><span class="s1">yTarget </span><span class="s2">&lt; </span><span class="s3">0 </span><span class="s2">|| </span><span class="s1">yTarget </span><span class="s2">&gt;= </span><span class="s3">20</span><span class="s2">) {</span>
+                        <span class="s0">return false</span><span class="s2">;</span>
+                    <span class="s2">}</span>
+                    <span class="s0">if </span><span class="s2">(</span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">xTarget</span><span class="s2">][</span><span class="s1">yTarget</span><span class="s2">] == </span><span class="s3">1 </span><span class="s2">|| </span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">xTarget</span><span class="s2">][</span><span class="s1">yTarget</span><span class="s2">] == </span><span class="s3">2 </span><span class="s2">|| </span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">xTarget</span><span class="s2">][</span><span class="s1">yTarget</span><span class="s2">] == </span><span class="s3">3 </span><span class="s2">|| </span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">xTarget</span><span class="s2">][</span><span class="s1">yTarget</span><span class="s2">] == </span><span class="s3">6</span><span class="s2">) {</span>
+                        <span class="s0">return false</span><span class="s2">;</span>
+                    <span class="s2">}</span>
+                <span class="s2">}</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+        <span class="s0">return true</span><span class="s2">;</span>
+    <span class="s2">}</span>
+
+    <span class="s1">@Override</span>
+    <span class="s0">protected void </span><span class="s1">paintComponent</span><span class="s2">(</span><span class="s1">Graphics a</span><span class="s2">) {</span>
+        <span class="s0">super</span><span class="s2">.</span><span class="s1">paintComponent</span><span class="s2">(</span><span class="s1">a</span><span class="s2">);</span>
+        <span class="s1">Graphics2D g2 </span><span class="s2">= (</span><span class="s1">Graphics2D</span><span class="s2">) </span><span class="s1">a</span><span class="s2">;</span>
+
+        <span class="s0">int </span><span class="s1">xOffset </span><span class="s2">= (</span><span class="s0">this</span><span class="s2">.</span><span class="s1">getWidth</span><span class="s2">() - </span><span class="s3">640</span><span class="s2">) / </span><span class="s3">2</span><span class="s2">;</span>
+        <span class="s0">int </span><span class="s1">yOffset </span><span class="s2">= (</span><span class="s0">this</span><span class="s2">.</span><span class="s1">getHeight</span><span class="s2">() - </span><span class="s3">640</span><span class="s2">) / </span><span class="s3">2</span><span class="s2">;</span>
+
+        <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">col </span><span class="s2">= </span><span class="s3">0</span><span class="s2">; </span><span class="s1">col </span><span class="s2">&lt; </span><span class="s3">20</span><span class="s2">; </span><span class="s1">col</span><span class="s2">++) {</span>
+            <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">row </span><span class="s2">= </span><span class="s3">0</span><span class="s2">; </span><span class="s1">row </span><span class="s2">&lt; </span><span class="s3">20</span><span class="s2">; </span><span class="s1">row</span><span class="s2">++) {</span>
+                <span class="s0">int </span><span class="s1">xDraw </span><span class="s2">= (</span><span class="s1">col </span><span class="s2">* </span><span class="s1">tileSize</span><span class="s2">) + </span><span class="s1">xOffset</span><span class="s2">;</span>
+                <span class="s0">int </span><span class="s1">yDraw </span><span class="s2">= (</span><span class="s1">row </span><span class="s2">* </span><span class="s1">tileSize</span><span class="s2">) + </span><span class="s1">yOffset</span><span class="s2">;</span>
+
+                <span class="s0">if </span><span class="s2">(</span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">col</span><span class="s2">][</span><span class="s1">row</span><span class="s2">] == </span><span class="s3">1 </span><span class="s2">|| </span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">col</span><span class="s2">][</span><span class="s1">row</span><span class="s2">] == </span><span class="s3">4</span><span class="s2">) {</span>
+                    <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">DARK_GRAY</span><span class="s2">);</span>
+                    <span class="s1">g2</span><span class="s2">.</span><span class="s1">fillRect</span><span class="s2">(</span><span class="s1">xDraw</span><span class="s2">, </span><span class="s1">yDraw</span><span class="s2">, </span><span class="s1">tileSize</span><span class="s2">, </span><span class="s1">tileSize</span><span class="s2">);</span>
+                <span class="s2">}</span>
+                <span class="s4">// sets start point to light blue</span>
+                <span class="s0">else if </span><span class="s2">(</span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">col</span><span class="s2">][</span><span class="s1">row</span><span class="s2">] == </span><span class="s3">2</span><span class="s2">) {</span>
+                    <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s0">new </span><span class="s1">Color</span><span class="s2">(</span><span class="s3">120</span><span class="s2">,</span><span class="s3">210</span><span class="s2">,</span><span class="s3">210</span><span class="s2">));</span>
+                    <span class="s1">g2</span><span class="s2">.</span><span class="s1">fillRect</span><span class="s2">(</span><span class="s1">xDraw</span><span class="s2">, </span><span class="s1">yDraw</span><span class="s2">, </span><span class="s1">tileSize</span><span class="s2">, </span><span class="s1">tileSize</span><span class="s2">);</span>
+                <span class="s2">}</span>
+                <span class="s4">// sets end point to yellow</span>
+                <span class="s0">else if </span><span class="s2">(</span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">col</span><span class="s2">][</span><span class="s1">row</span><span class="s2">] == </span><span class="s3">3</span><span class="s2">) {</span>
+                    <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s0">new </span><span class="s1">Color</span><span class="s2">(</span><span class="s3">210</span><span class="s2">, </span><span class="s3">210</span><span class="s2">, </span><span class="s3">120</span><span class="s2">));</span>
+                    <span class="s1">g2</span><span class="s2">.</span><span class="s1">fillRect</span><span class="s2">(</span><span class="s1">xDraw</span><span class="s2">, </span><span class="s1">yDraw</span><span class="s2">, </span><span class="s1">tileSize</span><span class="s2">, </span><span class="s1">tileSize</span><span class="s2">);</span>
+                <span class="s2">}</span>
+                <span class="s4">// sets character color to white</span>
+                <span class="s0">else if </span><span class="s2">(</span><span class="s1">mapGrid</span><span class="s2">[</span><span class="s1">col</span><span class="s2">][</span><span class="s1">row</span><span class="s2">] == </span><span class="s3">6</span><span class="s2">) {</span>
+                    <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">WHITE</span><span class="s2">);</span>
+                    <span class="s1">g2</span><span class="s2">.</span><span class="s1">fillRect</span><span class="s2">(</span><span class="s1">xDraw</span><span class="s2">, </span><span class="s1">yDraw</span><span class="s2">, </span><span class="s1">tileSize</span><span class="s2">, </span><span class="s1">tileSize</span><span class="s2">);</span>
+                <span class="s2">}</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+
+        <span class="s4">// generates grid lines</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s0">new </span><span class="s1">Color</span><span class="s2">(</span><span class="s3">40</span><span class="s2">,</span><span class="s3">40</span><span class="s2">,</span><span class="s3">40</span><span class="s2">));</span>
+        <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">col </span><span class="s2">= </span><span class="s3">0</span><span class="s2">; </span><span class="s1">col </span><span class="s2">&lt;= </span><span class="s3">20</span><span class="s2">; </span><span class="s1">col</span><span class="s2">++) {</span>
+            <span class="s0">int </span><span class="s1">xLine </span><span class="s2">= (</span><span class="s1">col </span><span class="s2">* </span><span class="s1">tileSize</span><span class="s2">) + </span><span class="s1">xOffset</span><span class="s2">;</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawLine</span><span class="s2">(</span><span class="s1">xLine</span><span class="s2">, </span><span class="s1">yOffset</span><span class="s2">, </span><span class="s1">xLine</span><span class="s2">, </span><span class="s1">yOffset </span><span class="s2">+ </span><span class="s3">640</span><span class="s2">);</span>
+        <span class="s2">}</span>
+        <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">row </span><span class="s2">= </span><span class="s3">0</span><span class="s2">; </span><span class="s1">row </span><span class="s2">&lt;= </span><span class="s3">20</span><span class="s2">; </span><span class="s1">row</span><span class="s2">++) {</span>
+            <span class="s0">int </span><span class="s1">yLine </span><span class="s2">= (</span><span class="s1">row </span><span class="s2">* </span><span class="s1">tileSize</span><span class="s2">) + </span><span class="s1">yOffset</span><span class="s2">;</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawLine</span><span class="s2">(</span><span class="s1">xOffset</span><span class="s2">, </span><span class="s1">yLine</span><span class="s2">, </span><span class="s1">xOffset </span><span class="s2">+ </span><span class="s3">640</span><span class="s2">, </span><span class="s1">yLine</span><span class="s2">);</span>
+        <span class="s2">}</span>
+
+        <span class="s4">// specifies hud dimensions and constants</span>
+        <span class="s0">int </span><span class="s1">hudWidth </span><span class="s2">= </span><span class="s3">200</span><span class="s2">;</span>
+        <span class="s0">int </span><span class="s1">hudHeight </span><span class="s2">= </span><span class="s3">50</span><span class="s2">;</span>
+        <span class="s0">int </span><span class="s1">hudX </span><span class="s2">= </span><span class="s1">xOffset </span><span class="s2">+ (</span><span class="s3">640 </span><span class="s2">- </span><span class="s1">hudWidth</span><span class="s2">) / </span><span class="s3">2</span><span class="s2">;</span>
+        <span class="s0">int </span><span class="s1">hudY </span><span class="s2">= </span><span class="s1">yOffset </span><span class="s2">- </span><span class="s1">hudHeight </span><span class="s2">- </span><span class="s3">15</span><span class="s2">;</span>
+
+        <span class="s4">// creates hud box</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">BLACK</span><span class="s2">);</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">fillRect</span><span class="s2">(</span><span class="s1">hudX</span><span class="s2">, </span><span class="s1">hudY</span><span class="s2">, </span><span class="s1">hudWidth</span><span class="s2">, </span><span class="s1">hudHeight</span><span class="s2">);</span>
+
+        <span class="s4">// creates border around hud</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">DARK_GRAY</span><span class="s2">);</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">setStroke</span><span class="s2">(</span><span class="s0">new </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">BasicStroke</span><span class="s2">(</span><span class="s3">2</span><span class="s2">));</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawRect</span><span class="s2">(</span><span class="s1">hudX</span><span class="s2">, </span><span class="s1">hudY</span><span class="s2">, </span><span class="s1">hudWidth</span><span class="s2">, </span><span class="s1">hudHeight</span><span class="s2">);</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">setStroke</span><span class="s2">(</span><span class="s0">new </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">BasicStroke</span><span class="s2">(</span><span class="s3">1</span><span class="s2">));</span>
+
+        <span class="s4">// creates text</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">WHITE</span><span class="s2">);</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">setFont</span><span class="s2">(</span><span class="s0">new </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">(</span><span class="s5">&quot;Arial&quot;</span><span class="s2">, </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">.</span><span class="s1">BOLD</span><span class="s2">, </span><span class="s3">12</span><span class="s2">));</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawString</span><span class="s2">(</span><span class="s5">&quot;Pieces Available&quot;</span><span class="s2">, </span><span class="s1">hudX </span><span class="s2">+ </span><span class="s3">15</span><span class="s2">, </span><span class="s1">hudY </span><span class="s2">+ </span><span class="s3">30</span><span class="s2">);</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">setFont</span><span class="s2">(</span><span class="s0">new </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">(</span><span class="s5">&quot;Arial&quot;</span><span class="s2">, </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">.</span><span class="s1">BOLD</span><span class="s2">, </span><span class="s3">28</span><span class="s2">));</span>
+        <span class="s4">// accesses number of blocks remaining</span>
+        <span class="s1">String count </span><span class="s2">= </span><span class="s1">String</span><span class="s2">.</span><span class="s1">valueOf</span><span class="s2">(</span><span class="s1">piecesRemaining</span><span class="s2">);</span>
+
+        <span class="s4">// changes color of text when block budget gets low</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">piecesRemaining </span><span class="s2">&lt;= </span><span class="s3">4</span><span class="s2">) {</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s0">new </span><span class="s1">Color</span><span class="s2">(</span><span class="s3">231</span><span class="s2">, </span><span class="s3">76</span><span class="s2">, </span><span class="s3">60</span><span class="s2">));</span>
+        <span class="s2">}</span>
+        <span class="s0">else </span><span class="s2">{</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">WHITE</span><span class="s2">);</span>
+        <span class="s2">}</span>
+
+        <span class="s4">// places the text in the hud box</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawString</span><span class="s2">(</span><span class="s1">count</span><span class="s2">, </span><span class="s1">hudX </span><span class="s2">+ </span><span class="s3">160</span><span class="s2">, </span><span class="s1">hudY </span><span class="s2">+ </span><span class="s3">35</span><span class="s2">);</span>
+
+        <span class="s0">int </span><span class="s1">hudWidth2 </span><span class="s2">= </span><span class="s3">320</span><span class="s2">;</span>
+        <span class="s0">int </span><span class="s1">hudHeight2 </span><span class="s2">= </span><span class="s3">65</span><span class="s2">;</span>
+        <span class="s0">int </span><span class="s1">hudX2 </span><span class="s2">= </span><span class="s1">xOffset </span><span class="s2">+ (</span><span class="s3">640 </span><span class="s2">- </span><span class="s1">hudWidth2</span><span class="s2">) / </span><span class="s3">2</span><span class="s2">;</span>
+        <span class="s0">int </span><span class="s1">hudY2 </span><span class="s2">= </span><span class="s1">yOffset </span><span class="s2">+ </span><span class="s3">640 </span><span class="s2">+ </span><span class="s3">15</span><span class="s2">;</span>
+
+        <span class="s4">// creates hud box</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">BLACK</span><span class="s2">);</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">fillRect</span><span class="s2">(</span><span class="s1">hudX2</span><span class="s2">, </span><span class="s1">hudY2</span><span class="s2">, </span><span class="s1">hudWidth2</span><span class="s2">, </span><span class="s1">hudHeight2</span><span class="s2">);</span>
+
+        <span class="s4">// creates border around hud</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">DARK_GRAY</span><span class="s2">);</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">setStroke</span><span class="s2">(</span><span class="s0">new </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">BasicStroke</span><span class="s2">(</span><span class="s3">2</span><span class="s2">));</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawRect</span><span class="s2">(</span><span class="s1">hudX2</span><span class="s2">, </span><span class="s1">hudY2</span><span class="s2">, </span><span class="s1">hudWidth2</span><span class="s2">, </span><span class="s1">hudHeight2</span><span class="s2">);</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">setStroke</span><span class="s2">(</span><span class="s0">new </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">BasicStroke</span><span class="s2">(</span><span class="s3">1</span><span class="s2">));</span>
+
+        <span class="s4">// creates text</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">WHITE</span><span class="s2">);</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">setFont</span><span class="s2">(</span><span class="s0">new </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">(</span><span class="s5">&quot;Arial&quot;</span><span class="s2">, </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">.</span><span class="s1">BOLD</span><span class="s2">, </span><span class="s3">12</span><span class="s2">));</span>
+        <span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">FontMetrics bm </span><span class="s2">= </span><span class="s1">g2</span><span class="s2">.</span><span class="s1">getFontMetrics</span><span class="s2">();</span>
+        <span class="s1">String helpText </span><span class="s2">= </span><span class="s5">&quot;Press H for Game Rules / Controls&quot;</span><span class="s2">;</span>
+        <span class="s0">int </span><span class="s1">xText </span><span class="s2">= </span><span class="s1">hudX2 </span><span class="s2">+ (</span><span class="s1">hudWidth2 </span><span class="s2">- </span><span class="s1">bm</span><span class="s2">.</span><span class="s1">stringWidth</span><span class="s2">(</span><span class="s1">helpText</span><span class="s2">)) / </span><span class="s3">2</span><span class="s2">;</span>
+        <span class="s0">int </span><span class="s1">yText </span><span class="s2">= </span><span class="s1">hudY2 </span><span class="s2">+ ((</span><span class="s1">hudHeight2 </span><span class="s2">- </span><span class="s1">bm</span><span class="s2">.</span><span class="s1">getHeight</span><span class="s2">()) / </span><span class="s3">2</span><span class="s2">) + </span><span class="s1">bm</span><span class="s2">.</span><span class="s1">getAscent</span><span class="s2">();</span>
+
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawString</span><span class="s2">(</span><span class="s1">helpText</span><span class="s2">, </span><span class="s1">xText</span><span class="s2">, </span><span class="s1">yText</span><span class="s2">);</span>
+
+        <span class="s4">// shows block movement on the screen</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">block </span><span class="s2">!= </span><span class="s0">null</span><span class="s2">) {</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">translate</span><span class="s2">(</span><span class="s1">xOffset</span><span class="s2">, </span><span class="s1">yOffset</span><span class="s2">);</span>
+            <span class="s0">if </span><span class="s2">(</span><span class="s1">isAreaClear</span><span class="s2">()) {</span>
+                <span class="s1">block</span><span class="s2">.</span><span class="s1">draw</span><span class="s2">(</span><span class="s1">g2</span><span class="s2">, </span><span class="s0">null</span><span class="s2">);</span>
+                <span class="s1">g2</span><span class="s2">.</span><span class="s1">translate</span><span class="s2">(-</span><span class="s1">xOffset</span><span class="s2">, -</span><span class="s1">yOffset</span><span class="s2">);</span>
+            <span class="s2">}</span>
+            <span class="s0">else</span>
+                <span class="s1">block</span><span class="s2">.</span><span class="s1">draw</span><span class="s2">(</span><span class="s1">g2</span><span class="s2">, </span><span class="s0">new </span><span class="s1">Color</span><span class="s2">(</span><span class="s3">255</span><span class="s2">, </span><span class="s3">0</span><span class="s2">, </span><span class="s3">0</span><span class="s2">, </span><span class="s3">120</span><span class="s2">));</span>
+        <span class="s2">}</span>
+
+
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">isVictory</span><span class="s2">) {</span>
+
+            <span class="s4">// prepares character to move character along path</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">WHITE</span><span class="s2">);</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">fillRect</span><span class="s2">((</span><span class="s0">int</span><span class="s2">)</span><span class="s1">charX </span><span class="s2">+ </span><span class="s1">xOffset</span><span class="s2">, (</span><span class="s0">int</span><span class="s2">)</span><span class="s1">charY </span><span class="s2">+ </span><span class="s1">yOffset</span><span class="s2">, </span><span class="s3">32</span><span class="s2">, </span><span class="s3">32</span><span class="s2">);</span>
+
+            <span class="s4">// once animation ends, displays victory message, centered</span>
+            <span class="s0">if </span><span class="s2">(!</span><span class="s1">animStart</span><span class="s2">) {</span>
+                <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s0">new </span><span class="s1">Color</span><span class="s2">(</span><span class="s3">0</span><span class="s2">, </span><span class="s3">0</span><span class="s2">, </span><span class="s3">0</span><span class="s2">, </span><span class="s3">150</span><span class="s2">));</span>
+                <span class="s1">g2</span><span class="s2">.</span><span class="s1">fillRect</span><span class="s2">(</span><span class="s1">xOffset</span><span class="s2">, </span><span class="s1">yOffset</span><span class="s2">, </span><span class="s3">640</span><span class="s2">, </span><span class="s3">640</span><span class="s2">);</span>
+
+                <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s0">new </span><span class="s1">Color</span><span class="s2">(</span><span class="s3">46</span><span class="s2">, </span><span class="s3">204</span><span class="s2">, </span><span class="s3">113</span><span class="s2">));</span>
+                <span class="s1">g2</span><span class="s2">.</span><span class="s1">setFont</span><span class="s2">(</span><span class="s0">new </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">(</span><span class="s5">&quot;Arial&quot;</span><span class="s2">, </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">.</span><span class="s1">BOLD</span><span class="s2">, </span><span class="s3">40</span><span class="s2">));</span>
+                <span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">FontMetrics fm </span><span class="s2">= </span><span class="s1">g2</span><span class="s2">.</span><span class="s1">getFontMetrics</span><span class="s2">();</span>
+
+                <span class="s1">String msg </span><span class="s2">= </span><span class="s5">&quot;Congratulations! You won!&quot;</span><span class="s2">;</span>
+                <span class="s1">String subMsg </span><span class="s2">= </span><span class="s5">&quot;Press ENTER to Play Again&quot;</span><span class="s2">;</span>
+                <span class="s0">int </span><span class="s1">txtX </span><span class="s2">= </span><span class="s1">xOffset </span><span class="s2">+ (</span><span class="s3">640 </span><span class="s2">- </span><span class="s1">fm</span><span class="s2">.</span><span class="s1">stringWidth</span><span class="s2">(</span><span class="s1">msg</span><span class="s2">)) / </span><span class="s3">2</span><span class="s2">;</span>
+                <span class="s0">int </span><span class="s1">txtY </span><span class="s2">= </span><span class="s1">yOffset </span><span class="s2">+ (</span><span class="s3">640 </span><span class="s2">/ </span><span class="s3">2</span><span class="s2">);</span>
+                <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawString</span><span class="s2">(</span><span class="s1">msg</span><span class="s2">, </span><span class="s1">txtX</span><span class="s2">, </span><span class="s1">txtY</span><span class="s2">);</span>
+                <span class="s1">g2</span><span class="s2">.</span><span class="s1">setFont</span><span class="s2">(</span><span class="s0">new </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">(</span><span class="s5">&quot;Arial&quot;</span><span class="s2">, </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">.</span><span class="s1">PLAIN</span><span class="s2">, </span><span class="s3">20</span><span class="s2">));</span>
+                <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawString</span><span class="s2">(</span><span class="s1">subMsg</span><span class="s2">, </span><span class="s1">txtX</span><span class="s2">, </span><span class="s1">txtY </span><span class="s2">+ </span><span class="s3">50</span><span class="s2">);</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">isGameOver</span><span class="s2">) {</span>
+            <span class="s4">// displays defeat message, centered</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s0">new </span><span class="s1">Color</span><span class="s2">(</span><span class="s3">0</span><span class="s2">,</span><span class="s3">0</span><span class="s2">,</span><span class="s3">0</span><span class="s2">,</span><span class="s3">150</span><span class="s2">));</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">fillRect</span><span class="s2">(</span><span class="s1">xOffset</span><span class="s2">, </span><span class="s1">yOffset</span><span class="s2">, </span><span class="s3">640</span><span class="s2">, </span><span class="s3">640</span><span class="s2">);</span>
+
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s0">new </span><span class="s1">Color</span><span class="s2">(</span><span class="s3">231</span><span class="s2">,</span><span class="s3">76</span><span class="s2">,</span><span class="s3">60</span><span class="s2">));</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">setFont</span><span class="s2">(</span><span class="s0">new </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">(</span><span class="s5">&quot;Arial&quot;</span><span class="s2">, </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">.</span><span class="s1">BOLD</span><span class="s2">, </span><span class="s3">40</span><span class="s2">));</span>
+            <span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">FontMetrics fm2 </span><span class="s2">= </span><span class="s1">g2</span><span class="s2">.</span><span class="s1">getFontMetrics</span><span class="s2">();</span>
+
+            <span class="s1">String msg2 </span><span class="s2">= </span><span class="s5">&quot;Game Over!&quot;</span><span class="s2">;</span>
+            <span class="s1">String subMsg2 </span><span class="s2">= </span><span class="s5">&quot;Press ENTER to Play Again&quot;</span><span class="s2">;</span>
+            <span class="s0">int </span><span class="s1">txtX2 </span><span class="s2">= </span><span class="s1">xOffset </span><span class="s2">+ (</span><span class="s3">640 </span><span class="s2">- </span><span class="s1">fm2</span><span class="s2">.</span><span class="s1">stringWidth</span><span class="s2">(</span><span class="s1">msg2</span><span class="s2">)) / </span><span class="s3">2</span><span class="s2">;</span>
+            <span class="s0">int </span><span class="s1">txtY2 </span><span class="s2">= </span><span class="s1">yOffset </span><span class="s2">+ (</span><span class="s3">640 </span><span class="s2">/ </span><span class="s3">2</span><span class="s2">);</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawString</span><span class="s2">(</span><span class="s1">msg2</span><span class="s2">, </span><span class="s1">txtX2</span><span class="s2">, </span><span class="s1">txtY2</span><span class="s2">);</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">setFont</span><span class="s2">(</span><span class="s0">new </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">(</span><span class="s5">&quot;Arial&quot;</span><span class="s2">, </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">.</span><span class="s1">PLAIN</span><span class="s2">, </span><span class="s3">20</span><span class="s2">));</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawString</span><span class="s2">(</span><span class="s1">subMsg2</span><span class="s2">, </span><span class="s1">txtX2</span><span class="s2">, </span><span class="s1">txtY2 </span><span class="s2">+ </span><span class="s3">50</span><span class="s2">);</span>
+        <span class="s2">}</span>
+
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">showHelp</span><span class="s2">) {</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s0">new </span><span class="s1">Color</span><span class="s2">(</span><span class="s3">0</span><span class="s2">,</span><span class="s3">0</span><span class="s2">,</span><span class="s3">0</span><span class="s2">,</span><span class="s3">150</span><span class="s2">));</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">fillRect</span><span class="s2">(</span><span class="s1">xOffset</span><span class="s2">, </span><span class="s1">yOffset</span><span class="s2">, </span><span class="s3">640</span><span class="s2">, </span><span class="s3">640</span><span class="s2">);</span>
+
+            <span class="s0">int </span><span class="s1">menuW </span><span class="s2">= </span><span class="s3">440</span><span class="s2">;</span>
+            <span class="s0">int </span><span class="s1">menuH </span><span class="s2">= </span><span class="s3">300</span><span class="s2">;</span>
+            <span class="s0">int </span><span class="s1">menuX </span><span class="s2">= </span><span class="s1">xOffset </span><span class="s2">+ (</span><span class="s3">640 </span><span class="s2">- </span><span class="s1">menuW</span><span class="s2">) / </span><span class="s3">2</span><span class="s2">;</span>
+            <span class="s0">int </span><span class="s1">menuY </span><span class="s2">= </span><span class="s1">yOffset </span><span class="s2">+ (</span><span class="s3">640 </span><span class="s2">- </span><span class="s1">menuH</span><span class="s2">) / </span><span class="s3">2</span><span class="s2">;</span>
+
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">BLACK</span><span class="s2">);</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">fillRect</span><span class="s2">(</span><span class="s1">menuX</span><span class="s2">, </span><span class="s1">menuY</span><span class="s2">, </span><span class="s1">menuW</span><span class="s2">, </span><span class="s1">menuH</span><span class="s2">);</span>
+
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">DARK_GRAY</span><span class="s2">);</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">setStroke</span><span class="s2">(</span><span class="s0">new </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">BasicStroke</span><span class="s2">(</span><span class="s3">3</span><span class="s2">));</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawRect</span><span class="s2">(</span><span class="s1">menuX</span><span class="s2">, </span><span class="s1">menuY</span><span class="s2">, </span><span class="s1">menuW</span><span class="s2">, </span><span class="s1">menuH</span><span class="s2">);</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">setStroke</span><span class="s2">(</span><span class="s0">new </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">BasicStroke</span><span class="s2">(</span><span class="s3">1</span><span class="s2">)); </span><span class="s4">// reset stroke config</span>
+
+            <span class="s4">// 3. Draw Menu Header Text</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s0">new </span><span class="s1">Color</span><span class="s2">(</span><span class="s3">52</span><span class="s2">, </span><span class="s3">152</span><span class="s2">, </span><span class="s3">219</span><span class="s2">));</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">setFont</span><span class="s2">(</span><span class="s0">new </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">(</span><span class="s5">&quot;Arial&quot;</span><span class="s2">, </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">.</span><span class="s1">BOLD</span><span class="s2">, </span><span class="s3">28</span><span class="s2">));</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawString</span><span class="s2">(</span><span class="s5">&quot;GAME CONTROLS &amp; RULES&quot;</span><span class="s2">, </span><span class="s1">menuX </span><span class="s2">+ </span><span class="s3">45</span><span class="s2">, </span><span class="s1">menuY </span><span class="s2">+ </span><span class="s3">50</span><span class="s2">);</span>
+
+            <span class="s4">// 4. Draw Rules Bullet Points</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">WHITE</span><span class="s2">);</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">setFont</span><span class="s2">(</span><span class="s0">new </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">(</span><span class="s5">&quot;Arial&quot;</span><span class="s2">, </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">.</span><span class="s1">PLAIN</span><span class="s2">, </span><span class="s3">16</span><span class="s2">));</span>
+
+            <span class="s0">int </span><span class="s1">startY </span><span class="s2">= </span><span class="s1">menuY </span><span class="s2">+ </span><span class="s3">100</span><span class="s2">;</span>
+            <span class="s0">int </span><span class="s1">lineSpacing </span><span class="s2">= </span><span class="s3">30</span><span class="s2">;</span>
+
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawString</span><span class="s2">(</span><span class="s5">&quot;• ARROW KEYS / WASD : Move block around grid&quot;</span><span class="s2">, </span><span class="s1">menuX </span><span class="s2">+ </span><span class="s3">30</span><span class="s2">, </span><span class="s1">startY</span><span class="s2">);</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawString</span><span class="s2">(</span><span class="s5">&quot;• SPACEBAR / R  : Rotate the block &quot;</span><span class="s2">, </span><span class="s1">menuX </span><span class="s2">+ </span><span class="s3">30</span><span class="s2">, </span><span class="s1">startY </span><span class="s2">+ </span><span class="s1">lineSpacing</span><span class="s2">);</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawString</span><span class="s2">(</span><span class="s5">&quot;• ENTER      : Lock block in place&quot;</span><span class="s2">, </span><span class="s1">menuX </span><span class="s2">+ </span><span class="s3">30</span><span class="s2">, </span><span class="s1">startY </span><span class="s2">+ (</span><span class="s1">lineSpacing </span><span class="s2">* </span><span class="s3">2</span><span class="s2">));</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawString</span><span class="s2">(</span><span class="s5">&quot;• OBJECTIVE  : Connect start point to end point&quot;</span><span class="s2">, </span><span class="s1">menuX </span><span class="s2">+ </span><span class="s3">30</span><span class="s2">, </span><span class="s1">startY </span><span class="s2">+ (</span><span class="s1">lineSpacing </span><span class="s2">* </span><span class="s3">3</span><span class="s2">));</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawString</span><span class="s2">(</span><span class="s5">&quot;• RESTRICTIONS  : Path height cannot exceed 2 blocks&quot;</span><span class="s2">, </span><span class="s1">menuX </span><span class="s2">+ </span><span class="s3">30</span><span class="s2">, </span><span class="s1">startY </span><span class="s2">+ (</span><span class="s1">lineSpacing </span><span class="s2">* </span><span class="s3">4</span><span class="s2">));</span>
+
+            <span class="s4">// tells user how to get back to playing</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">setColor</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">LIGHT_GRAY</span><span class="s2">);</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">setFont</span><span class="s2">(</span><span class="s0">new </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">(</span><span class="s5">&quot;Arial&quot;</span><span class="s2">, </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.</span><span class="s1">Font</span><span class="s2">.</span><span class="s1">ITALIC</span><span class="s2">, </span><span class="s3">14</span><span class="s2">));</span>
+            <span class="s1">g2</span><span class="s2">.</span><span class="s1">drawString</span><span class="s2">(</span><span class="s5">&quot;Press 'H' again to close this menu and resume&quot;</span><span class="s2">, </span><span class="s1">menuX </span><span class="s2">+ </span><span class="s3">70</span><span class="s2">, </span><span class="s1">menuY </span><span class="s2">+ </span><span class="s3">265</span><span class="s2">);</span>
+        <span class="s2">}</span>
+        <span class="s4">// removes g2 variable</span>
+        <span class="s1">g2</span><span class="s2">.</span><span class="s1">dispose</span><span class="s2">();</span>
+    <span class="s2">}</span>
+<span class="s2">}</span></pre>
+</body>
+</html>
